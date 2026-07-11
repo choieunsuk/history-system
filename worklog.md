@@ -242,3 +242,44 @@ Stage Summary:
 - 닫기 버튼이 헤더 요소와 분리되어 적절한 간격 확보
 - 모바일 페이지네이션이 320px 좁은 화면에서도 넘어가지 않음
 - 줄바꿈 허용으로 페이지 많아져도 대응
+
+---
+Task ID: 11
+Agent: main (orchestrator)
+Task: 시놀로지 NAS Docker 배포 환경 구성
+
+Work Log:
+- next.config.ts 이미 standalone 모드 확인 (Docker 배포 최적화)
+- bun run build로 standalone 산출물 생성 검증 (server.js, 159MB, HTTP 200)
+- Dockerfile 작성 (3단계 다중 스테이지):
+  - Stage 1 (deps): oven/bun:1.1, 의존성 설치
+  - Stage 2 (builder): prisma generate + next build
+  - Stage 3 (runtime): node:20-alpine, standalone 서버 + prisma CLI
+  - non-root 사용자(nextjs, UID 1001) 보안 적용
+  - HEALTHCHECK 추가 (wget spider, 30s 간격)
+  - DATABASE_URL=file:/app/db/custom.db 기본값
+- .dockerignore 작성: node_modules, .next, .git, 로그, 업로드 등 제외
+- docker-entrypoint.sh 작성: 컨테이너 시작 시 prisma db push 자동 실행 후 서버 구동
+- docker-compose.yml 작성:
+  - 포트 3100:3000 (시놀로지 3000 충돌 회피)
+  - 볼륨 2개: db-data (/app/db), uploads-data (/app/public/uploads) 영속화
+  - restart: unless-stopped
+  - 리소스 제한: 512MB 메모리, 1 CPU
+  - 헬스체크 설정
+- DEPLOY.md 배포 가이드 작성:
+  - 방법 A: Container Manager 프로젝트 기능 (GUI 권장)
+  - 방법 B: SSH 명령어 (고급)
+  - 데이터 영속화, 외부 접속(역방향 프록시), 백업/복구, 문제해결, 보안 체크리스트
+- package.json: prisma seed 설정 추가, db:seed 스크립트 추가
+
+검증:
+- bun run build 정상 (standalone 산출물 확인)
+- standalone 서버 동작 확인 (HTTP 200)
+- lint 0 에러
+
+Stage Summary:
+- 시놀로지 NAS Container Manager 배포용 Docker 환경 완성
+- 3단계 멀티스테이지로 이미지 크기 최소화
+- DB/업로드 파일 볼륨 영속화로 컨테이너 재생성 시 데이터 유지
+- 컨테이너 시작 시 자동 DB 스키마 적용
+- HTTPS 역방향 프록시 가이드 포함

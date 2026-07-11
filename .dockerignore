@@ -1,0 +1,72 @@
+# 역사자료부 자료이관 시스템 - .dockerignore
+# 빌드 컨텍스트에서 불필요한 파일 제외 (빌드 속도 향상, 이미지 크기 감소)
+
+# 의존성
+node_modules
+.pnp
+.pnp.js
+
+# Next.js 빌드 산출물
+.next
+out
+build
+dist
+
+# Docker / CI
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# 버전 관리
+.git
+.gitignore
+.gitattributes
+
+# 환경변수 (컨테이너에서 별도 주입)
+.env*
+!.env.example
+
+# 데이터베이스 (호스트 볼륨으로 마운트)
+db/*.db
+db/*.db-journal
+
+# 업로드 파일 (호스트 볼륨으로 마운트)
+public/uploads/*
+!public/uploads/.gitkeep
+
+# 로그
+*.log
+dev.log
+server.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 에디터 / OS
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# 문서 / 테스트
+README.md
+*.md
+docs
+coverage
+.nyc_output
+
+# 캐시
+.cache
+.eslintcache
+*.tsbuildinfo
+
+# 업로드 원본 / 다운로드 산출물
+upload
+download
+agent-ctx
+.zscripts
+skills
+examples
+mini-services

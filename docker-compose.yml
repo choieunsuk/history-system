@@ -1,0 +1,60 @@
+# 역사자료부 자료이관 시스템 - docker-compose.yml
+# 시놀로지 NAS Container Manager (프로젝트 기능)에서 사용
+#
+# 배포 방법:
+#   1. 프로젝트 폴더(예: /volume1/docker/history-archives)에 소스 업로드
+#   2. Container Manager → 프로젝트 → 생성 → docker-compose.yml 경로 지정
+#   3. 빌드 및 시작
+#
+# 또는 SSH 접속 후:
+#   cd /volume1/docker/history-archives
+#   docker compose up -d --build
+
+services:
+  history-archives:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # 미리 빌드된 이미지를 사용하는 경우 build 대신 image 사용:
+    # image: history-archives:latest
+    container_name: history-archives
+    restart: unless-stopped
+
+    ports:
+      - "3100:3000"  # 호스트 3100 → 컨테이너 3000 (시놀로지 3000 충돌 회피)
+
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/db/custom.db
+      - NEXT_TELEMETRY_DISABLED=1
+      # 필요시 시놀로지 역방향 프록시 도메인 설정:
+      # - NEXTAUTH_URL=https://archives.your-church.kr
+
+    volumes:
+      # 데이터베이스 영속화 (SQLite) — 컨테이너 재생성 시에도 데이터 유지
+      - db-data:/app/db
+      # 업로드 파일 영속화 (대표사진, QR, 첨부파일)
+      - uploads-data:/app/public/uploads
+
+    # 헬스체크
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+    # 리소스 제한 (시놀로지 NAS 보호)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+
+volumes:
+  db-data:
+    driver: local
+  uploads-data:
+    driver: local
