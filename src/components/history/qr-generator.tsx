@@ -126,7 +126,10 @@ export function QrGenerator({
       </button>
 
       <Dialog open={open} onOpenChange={(o) => !o && setOpen(false)}>
-        <DialogContent className="max-w-md">
+        <DialogContent
+          aria-describedby={undefined}
+          className="max-w-md"
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-stone-800">
               <Sparkles className="size-4 text-amber-600" />

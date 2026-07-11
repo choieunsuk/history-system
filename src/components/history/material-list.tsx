@@ -398,22 +398,22 @@ export function MaterialList({
 
         {/* 페이지네이션 */}
         {!isError && totalPages > 0 ? (
-          <div className="flex flex-col items-center gap-2 border-t border-stone-100 px-4 py-3 sm:flex-row sm:justify-between">
+          <div className="flex flex-col items-center gap-2 border-t border-stone-100 px-3 py-3 sm:flex-row sm:justify-between sm:px-4">
             <span className="text-xs text-stone-400">
               {page} / {totalPages} 페이지
             </span>
-            <Pagination className="mx-0 w-auto justify-center sm:justify-end">
-              <PaginationContent>
+            <Pagination className="mx-0 w-auto max-w-full justify-center sm:justify-end">
+              <PaginationContent className="flex-wrap justify-center gap-0.5 sm:gap-1">
                 <PaginationItem>
                   <PaginationLink
                     onClick={() => setPage(1)}
                     aria-disabled={page === 1}
                     className={cn(
-                      "size-8 gap-0 px-0",
+                      "size-7 gap-0 px-0 sm:size-8",
                       page === 1 && "pointer-events-none opacity-40"
                     )}
                   >
-                    <ChevronsLeft className="size-4" />
+                    <ChevronsLeft className="size-3.5 sm:size-4" />
                   </PaginationLink>
                 </PaginationItem>
                 <PaginationItem>
@@ -421,17 +421,17 @@ export function MaterialList({
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     aria-disabled={page === 1}
                     className={cn(
-                      "size-8 gap-0 px-0",
+                      "size-7 gap-0 px-0 sm:size-8",
                       page === 1 && "pointer-events-none opacity-40"
                     )}
                   >
-                    <ChevronLeft className="size-4" />
+                    <ChevronLeft className="size-3.5 sm:size-4" />
                   </PaginationLink>
                 </PaginationItem>
                 {pageRange(page, totalPages).map((p, i) =>
                   p === "…" ? (
                     <PaginationItem key={`e${i}`}>
-                      <span className="flex size-8 items-center justify-center text-stone-400">
+                      <span className="flex size-7 items-center justify-center text-stone-400 sm:size-8">
                         …
                       </span>
                     </PaginationItem>
@@ -440,7 +440,7 @@ export function MaterialList({
                       <PaginationLink
                         isActive={p === page}
                         onClick={() => setPage(p)}
-                        className="size-8 px-0"
+                        className="size-7 px-0 text-xs sm:size-8 sm:text-sm"
                       >
                         {p}
                       </PaginationLink>
@@ -452,11 +452,11 @@ export function MaterialList({
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     aria-disabled={page === totalPages}
                     className={cn(
-                      "size-8 gap-0 px-0",
+                      "size-7 gap-0 px-0 sm:size-8",
                       page === totalPages && "pointer-events-none opacity-40"
                     )}
                   >
-                    <ChevronRight className="size-4" />
+                    <ChevronRight className="size-3.5 sm:size-4" />
                   </PaginationLink>
                 </PaginationItem>
                 <PaginationItem>
@@ -464,11 +464,11 @@ export function MaterialList({
                     onClick={() => setPage(totalPages)}
                     aria-disabled={page === totalPages}
                     className={cn(
-                      "size-8 gap-0 px-0",
+                      "size-7 gap-0 px-0 sm:size-8",
                       page === totalPages && "pointer-events-none opacity-40"
                     )}
                   >
-                    <ChevronsRight className="size-4" />
+                    <ChevronsRight className="size-3.5 sm:size-4" />
                   </PaginationLink>
                 </PaginationItem>
               </PaginationContent>

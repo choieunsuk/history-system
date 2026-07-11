@@ -66,23 +66,27 @@ export function MaterialDetail({
         aria-describedby={undefined}
         className="flex max-h-[92vh] w-full flex-col gap-0 overflow-hidden bg-white p-0 sm:max-w-3xl"
       >
-        <DialogHeader className="flex-row items-start justify-between gap-3 border-b border-stone-200 px-6 py-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs text-stone-500">
-              <span>자료 상세</span>
-              {data ? (
-                <>
-                  <span className="text-stone-300">|</span>
-                  <span>등록번호 {data.id.slice(0, 8)}</span>
-                </>
-              ) : null}
+        <DialogHeader className="flex-col gap-3 border-b border-stone-200 px-4 py-4 pr-14 sm:px-6 sm:pr-14">
+          {/* 첫 번째 행: 라벨 + 닫기 버튼 (닫기 버튼을 배지와 분리) */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 text-xs text-stone-500">
+                <span>자료 상세</span>
+                {data ? (
+                  <>
+                    <span className="text-stone-300">|</span>
+                    <span>등록번호 {data.id.slice(0, 8)}</span>
+                  </>
+                ) : null}
+              </div>
+              <DialogTitle className="mt-1 line-clamp-2 pr-2 text-lg font-semibold text-stone-800">
+                {data?.title ?? "자료 조회"}
+              </DialogTitle>
             </div>
-            <DialogTitle className="mt-1 line-clamp-2 text-lg font-semibold text-stone-800">
-              {data?.title ?? "자료 조회"}
-            </DialogTitle>
           </div>
+          {/* 두 번째 행: 배지들 (닫기 버튼과 분리되어 겹침 방지) */}
           {data ? (
-            <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <ClassificationBadge code={data.classification} />
               <PublicBadge isPublic={data.isPublic} />
             </div>

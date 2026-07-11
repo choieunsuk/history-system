@@ -139,10 +139,13 @@ function MaterialFormDialog({
   const isEdit = !!id;
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="flex max-h-[92vh] w-full flex-col gap-0 overflow-hidden bg-white p-0 sm:max-w-3xl">
-        {/* 헤더 */}
-        <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-stone-200 px-6 py-4">
-          <div>
+      <DialogContent
+        aria-describedby={undefined}
+        className="flex max-h-[92vh] w-full flex-col gap-0 overflow-hidden bg-white p-0 sm:max-w-3xl"
+      >
+        {/* 헤더 — 닫기 버튼(absolute)과 간격 확보를 위해 pr-14 추가 */}
+        <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-stone-200 px-4 py-4 pr-14 sm:px-6 sm:pr-14">
+          <div className="min-w-0">
             <DialogTitle className="text-lg font-semibold text-stone-800">
               {isEdit ? "자료 수정" : "자료 등록"}
             </DialogTitle>
@@ -151,7 +154,7 @@ function MaterialFormDialog({
             </DialogDescription>
           </div>
           {isEdit ? (
-            <span className="hidden rounded-md border border-stone-200 bg-stone-50 px-2 py-1 text-xs text-stone-500 sm:inline-block">
+            <span className="hidden shrink-0 rounded-md border border-stone-200 bg-stone-50 px-2 py-1 text-xs text-stone-500 sm:inline-block">
               수정자 자동 표기
             </span>
           ) : null}

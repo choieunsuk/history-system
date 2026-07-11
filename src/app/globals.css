@@ -120,3 +120,43 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 다이얼로그 닫기 버튼 위치 개선 — 헤더 요소와 충분한 간격 확보 */
+@layer components {
+  [data-radix-dialog-content] > button[data-radix-dialog-close],
+  [role="dialog"] > button[aria-label="Close"] {
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 50;
+  }
+  /* 모바일에서 닫기 버튼 터치 영역 확보 */
+  @media (max-width: 640px) {
+    [data-radix-dialog-content] > button[data-radix-dialog-close],
+    [role="dialog"] > button[aria-label="Close"] {
+      top: 0.625rem;
+      right: 0.625rem;
+    }
+  }
+}
+
+/* 커스텀 스크롤바 — 목록/첨부파일 영역 */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #d6d3d1 transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #d6d3d1;
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: #a8a29e;
+  }
+}

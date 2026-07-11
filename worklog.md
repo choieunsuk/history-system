@@ -207,3 +207,38 @@ Stage Summary:
 - Hydration mismatch 해결: 날짜 렌더링을 클라이언트 마운트 후로 지연
 - 접근성 경고 해결: DialogContent aria-describedby 명시
 - Fast Refresh unrecoverable error 경고도 사라짐
+
+---
+Task ID: 10
+Agent: main (orchestrator)
+Task: 닫기 버튼 간격 및 모바일 페이지네이션 넘어감 문제 수정
+
+Work Log:
+- 사용자 스크린샷 2장 VLM 분석으로 문제 진단
+- 문제 1: 상세/등록 다이얼로그 닫기(X) 버튼이 헤더 요소(배지, 제목)와 너무 붙어있음
+  - 원인: Radix Dialog 닫기 버튼이 absolute 포지션으로 헤더 요소와 겹침
+- 문제 2: 모바일에서 자료목록 페이지네이션이 화면 영역 넘어감
+  - 원인: 10개 버튼(처음/이전/6번호/다음/마지막) × 32px + gap = 360px, 390px 화면에서 넘어감
+
+수정 내용:
+- material-detail.tsx: 헤더를 2행 구조로 변경 (제목 행 / 배지 행 분리), pr-14로 닫기 버튼 공간 확보
+- material-form.tsx: 헤더에 pr-14, aria-describedby={undefined} 추가, min-w-0/shrink-0로 반응형 개선
+- qr-generator.tsx: DialogContent에 aria-describedby={undefined} 추가
+- globals.css: 닫기 버튼 위치 CSS 추가 (top/right 0.75rem, 모바일 0.625rem, z-50)
+- globals.css: 커스텀 스크롤바(.scrollbar-thin) 유틸리티 추가
+- material-list.tsx: 페이지네이션 반응형 개선
+  - 모바일: 버튼 size-7(28px), gap-0.5, 아이콘 size-3.5, 텍스트 text-xs
+  - 데스크톱: 버튼 size-8(32px), gap-1, 아이콘 size-4, 텍스트 text-sm
+  - PaginationContent에 flex-wrap + justify-center로 줄바꿈 허용
+  - px-3(모바일)/px-4(데스크톱)로 패딩 최적화
+
+검증:
+- 모바일 390px: 페이지네이션 모두 화면 안, 닫기 버튼 적절한 간격 (VLM 확인)
+- 모바일 320px: 페이지네이션 정상 표시 (VLM 확인)
+- 데스크톱 1440px: 상세 다이얼로그 헤더 정상 (VLM 확인)
+- 콘솔 에러/경고 0건, lint 0 에러
+
+Stage Summary:
+- 닫기 버튼이 헤더 요소와 분리되어 적절한 간격 확보
+- 모바일 페이지네이션이 320px 좁은 화면에서도 넘어가지 않음
+- 줄바꿈 허용으로 페이지 많아져도 대응
