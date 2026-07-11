@@ -62,11 +62,36 @@ export const PRIVATE_VIEW_ROLES = ROLES.filter((r) => r.canViewPrivate).map((r) 
 // 첨부 파일 최대 개수
 export const MAX_ATTACHMENTS = 10;
 
-// 허용 파일 확장자
+// 허용 파일 확장자 (대소문자 무관, 소문자로 비교)
+// PPTX 요구사항: "모든 문서자료는 PDF, PPT, DOC, XLS 등 국제 표준문서로 변환하여 Upload"
+// HWP는 색인 불가로 원칙 차단이나, 보존 목적 업로드는 허용(PDF 변환 권장 안내는 UI에서 처리)
 export const ALLOWED_FILE_EXTENSIONS = [
+  // 문서
   ".pdf", ".ppt", ".pptx", ".doc", ".docx", ".xls", ".xlsx",
-  ".jpg", ".jpeg", ".png", ".gif", ".mp4", ".mp3", ".wav",
+  ".hwp", ".txt", ".rtf", ".csv",
+  // 이미지
+  ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp", ".tiff", ".tif",
+  // 영상/음향
+  ".mp4", ".mov", ".avi", ".mkv", ".mp3", ".wav", ".m4a", ".ogg", ".flac",
+  // 압축/기타
+  ".zip", ".json",
 ];
+
+// 업로드 차단 확장자 (보안상 위험한 실행 파일)
+export const BLOCKED_FILE_EXTENSIONS = [
+  ".exe", ".bat", ".cmd", ".sh", ".js", ".mjs", ".jar", ".msi", ".dll", ".so",
+];
+
+// 파일 종류 분류 (UI 아이콘/표시용)
+export function getFileKind(fileName: string): "image" | "video" | "audio" | "document" | "archive" | "other" {
+  const ext = fileName.toLowerCase().match(/\.([^.]+)$/)?.[1] ?? "";
+  if (["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "tiff", "tif"].includes(ext)) return "image";
+  if (["mp4", "mov", "avi", "mkv"].includes(ext)) return "video";
+  if (["mp3", "wav", "m4a", "ogg", "flac"].includes(ext)) return "audio";
+  if (["pdf", "ppt", "pptx", "doc", "docx", "xls", "xlsx", "hwp", "txt", "rtf", "csv"].includes(ext)) return "document";
+  if (["zip"].includes(ext)) return "archive";
+  return "other";
+}
 
 // 카테고리 색상 (UI용 - warm archival palette)
 export const CATEGORY_COLORS: Record<ClassificationCategory, string> = {

@@ -125,3 +125,31 @@ Stage Summary:
 - 대시보드·목록·상세 3곳 모두에서 관리 액션 진입점 제공 (교역자 권한)
 - 비관리자(일반인/등록교인/서리집사)는 등록/수정/삭제 버튼 숨김 처리
 - 인쇄 기능 추가 (PPTX 요구사항 반영)
+
+---
+Task ID: 7
+Agent: main (orchestrator)
+Task: 업로드 실패 원인 분석 및 수정
+
+Work Log:
+- 원인 분석 1: 확장자 화이트리스트가 좁아 .txt/.csv/.zip/.hwp 등 차단 (400)
+- 원인 분석 2: SingleImageUpload 클라이언트 제한 20MB vs API 50MB 불일치
+- 원인 분석 3: Next.js 기본 본문 크기 제한(serverActions 1MB)로 대용량 실패 가능
+- 원인 분석 4: 에러 메시지가 추상적이라 사용자가 원인 파악 어려움
+- constants.ts: 허용 확장자 보강 (txt, hwp, rtf, csv, webp, svg, bmp, tiff, mov, avi, mkv, m4a, ogg, flac, zip, json 추가)
+- constants.ts: BLOCKED_FILE_EXTENSIONS 추가 (exe, bat, cmd, sh, js, jar, msi, dll, so)
+- constants.ts: getFileKind() 헬퍼 추가 (image/video/audio/document/archive/other 분류)
+- next.config.ts: experimental.serverActions.bodySizeLimit = "50mb" 설정
+- upload/route.ts: Content-Length 사전 검사, 차단 확장자 검사, 저장 검증, 상세 에러 메시지
+- use-materials.ts: useUploadFile 에러 처리 개선 (상태코드별 한국어 prefix, detail 추출)
+- file-upload.tsx: validateFile() 클라이언트 사전 검증, 파일 종류별 아이콘, 50MB 통일
+- 검증: txt/pdf/png/exe/5MB/60MB/브라우저fetch 모든 시나리오 의도대로 동작
+- lint 0 에러, dev 로그 201/400/413 정상 응답
+
+Stage Summary:
+- 업로드 실패 4가지 원인 모두 수정
+- 허용 확장자 14개 → 31개로 확대 (HWP 포함)
+- 보안 차단 확장자 명시 (실행 파일)
+- 클라이언트/서버 양쪽 검증으로 빠른 피드백 + 안전
+- 에러 메시지 한국어화로 사용자 친화적
+- 50MB까지 업로드 가능 (Next.js 제한 상향)

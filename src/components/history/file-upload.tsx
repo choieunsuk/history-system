@@ -4,6 +4,11 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useUploadFile, type UploadResult } from "@/hooks/use-materials";
+import {
+  ALLOWED_FILE_EXTENSIONS,
+  BLOCKED_FILE_EXTENSIONS,
+  getFileKind,
+} from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import {
   FileText,
@@ -12,6 +17,10 @@ import {
   Upload,
   X,
   Paperclip,
+  Film,
+  Music,
+  Archive,
+  File,
 } from "lucide-react";
 
 export function formatBytes(bytes: number): string {
@@ -21,9 +30,48 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
-const IMAGE_RE = /\.(png|jpe?g|gif|webp|svg|bmp)$/i;
+const IMAGE_RE = /\.(png|jpe?g|gif|webp|svg|bmp|tiff?)$/i;
 export function isImageName(name: string): boolean {
   return IMAGE_RE.test(name);
+}
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+/** 클라이언트 사이드 확장자/크기 사전 검증 (빠른 피드백) */
+function validateFile(file: File): string | null {
+  if (file.size === 0) return "빈 파일(0 byte)은 업로드할 수 없습니다.";
+  if (file.size > MAX_FILE_SIZE) {
+    return `파일 크기는 50MB 이하여야 합니다. (현재: ${(file.size / 1024 / 1024).toFixed(1)}MB)`;
+  }
+  if (!file.name.includes(".")) {
+    return "확장자가 없는 파일은 업로드할 수 없습니다.";
+  }
+  const ext = "." + (file.name.split(".").pop() || "").toLowerCase();
+  if (BLOCKED_FILE_EXTENSIONS.includes(ext)) {
+    return `보안상 실행 파일(${ext})은 업로드할 수 없습니다.`;
+  }
+  if (!ALLOWED_FILE_EXTENSIONS.includes(ext)) {
+    return `허용되지 않은 확장자: ${ext}`;
+  }
+  return null;
+}
+
+/** 파일 종류별 아이콘 반환 */
+export function getFileIcon(fileName: string) {
+  switch (getFileKind(fileName)) {
+    case "image":
+      return ImageIcon;
+    case "video":
+      return Film;
+    case "audio":
+      return Music;
+    case "archive":
+      return Archive;
+    case "document":
+      return FileText;
+    default:
+      return File;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -50,8 +98,17 @@ export function SingleImageUpload({
 
   const handle = async (file?: File) => {
     if (!file) return;
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("파일 크기는 20MB 이하여야 합니다.");
+    // 클라이언트 사전 검증
+    const err = validateFile(file);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    // 이미지 필드는 이미지 파일만 허용
+    if (!isImageName(file.name)) {
+      toast.error(
+        `${label}은(는) 이미지 파일(jpg, png, gif 등)만 등록할 수 있습니다.`
+      );
       return;
     }
     try {
@@ -73,11 +130,7 @@ export function SingleImageUpload({
           )}
         >
           {/* 대표사진/QR 미리보기 이미지 */}
-          <img
-            src={value}
-            alt={label}
-            className="h-full w-full object-contain"
-          />
+          <img src={value} alt={label} className="h-full w-full object-contain" />
           <button
             type="button"
             onClick={onClear}
@@ -113,7 +166,11 @@ export function SingleImageUpload({
             <ImageIcon className="size-4 text-amber-600" />
           </div>
           <span className="text-xs font-medium">{label} 선택</span>
-          {hint ? <span className="px-3 text-center text-[11px] text-stone-400">{hint}</span> : null}
+          {hint ? (
+            <span className="px-3 text-center text-[11px] text-stone-400">
+              {hint}
+            </span>
+          ) : null}
         </>
       )}
       <input
@@ -154,6 +211,10 @@ export function AttachmentUpload({
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const room = max - value.length;
+    if (room <= 0) {
+      toast.warning(`첨부파일은 최대 ${max}개까지 등록할 수 있습니다.`);
+      return;
+    }
     const list = Array.from(files).slice(0, room);
     if (Array.from(files).length > room) {
       toast.warning(`첨부파일은 최대 ${max}개까지 등록할 수 있습니다.`);
@@ -161,8 +222,10 @@ export function AttachmentUpload({
     setBusy(true);
     const added: AttachmentItem[] = [];
     for (const f of list) {
-      if (f.size > 50 * 1024 * 1024) {
-        toast.error(`${f.name} — 50MB 초과로 제외되었습니다.`);
+      // 클라이언트 사전 검증
+      const err = validateFile(f);
+      if (err) {
+        toast.error(`${f.name} — ${err}`);
         continue;
       }
       try {
@@ -174,7 +237,9 @@ export function AttachmentUpload({
           fileSize: res.fileSize,
         });
       } catch (e) {
-        toast.error(`${f.name} 업로드 실패`);
+        toast.error(
+          `${f.name} 업로드 실패${e instanceof Error ? ` — ${e.message}` : ""}`
+        );
       }
     }
     if (added.length) {
@@ -209,7 +274,7 @@ export function AttachmentUpload({
           파일 추가
         </Button>
         <span className="text-xs text-stone-400">
-          {value.length}/{max}개 · PDF/PPT/DOC/XLS/이미지/영상 권장
+          {value.length}/{max}개 · 최대 50MB · PDF/문서/이미지/영상/음성
         </span>
         <input
           ref={inputRef}
@@ -228,7 +293,8 @@ export function AttachmentUpload({
       ) : (
         <ul className="max-h-44 space-y-1 overflow-y-auto pr-1">
           {value.map((f, i) => {
-            const isImg = isImageName(f.fileName);
+            const Icon = getFileIcon(f.fileName);
+            const isImg = getFileKind(f.fileName) === "image";
             return (
               <li
                 key={`${f.url}-${i}`}
@@ -242,11 +308,7 @@ export function AttachmentUpload({
                       : "bg-amber-50 text-amber-600"
                   )}
                 >
-                  {isImg ? (
-                    <ImageIcon className="size-3.5" />
-                  ) : (
-                    <FileText className="size-3.5" />
-                  )}
+                  <Icon className="size-3.5" />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-stone-700">
                   {f.fileName}

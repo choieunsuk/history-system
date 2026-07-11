@@ -160,8 +160,23 @@ export function useUploadFile() {
       fd.append("file", file);
       const res = await fetch(`${BASE}/upload`, { method: "POST", body: fd });
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`파일 업로드 실패 (${res.status})${text ? ` — ${text}` : ""}`);
+        // 서버가 반환한 상세 에러 메시지 추출
+        let detail = "";
+        try {
+          const data = await res.json();
+          detail = data.error || data.message || "";
+          if (data.hint) detail += ` (${data.hint})`;
+        } catch {
+          detail = await res.text().catch(() => "");
+        }
+        // 상태 코드별 사용자 친화적 메시지
+        let prefix = "업로드 실패";
+        if (res.status === 413) prefix = "파일 크기 초과";
+        else if (res.status === 400) prefix = "업로드 불가 파일";
+        else if (res.status >= 500) prefix = "서버 오류";
+        throw new Error(
+          `${prefix}${detail ? ` — ${detail}` : ` (HTTP ${res.status})`}`
+        );
       }
       return (await res.json()) as UploadResult;
     },
