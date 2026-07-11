@@ -182,3 +182,37 @@ export function useUploadFile() {
     },
   });
 }
+
+/** QR 코드 생성 결과 */
+export interface QrGenerateResult extends UploadResult {
+  text: string;
+  size: number;
+}
+
+/** QR 코드 자동 생성 — 텍스트를 인코딩한 PNG 이미지를 서버에서 생성 */
+export function useGenerateQr() {
+  return useMutation<QrGenerateResult, Error, { text: string; size?: number }>({
+    mutationFn: async ({ text, size }) => {
+      const res = await fetch(`${BASE}/qr-generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, size }),
+      });
+      if (!res.ok) {
+        let detail = "";
+        try {
+          const data = await res.json();
+          detail = data.error || data.detail || "";
+        } catch {
+          detail = await res.text().catch(() => "");
+        }
+        const prefix =
+          res.status >= 500 ? "서버 오류" : "QR 생성 실패";
+        throw new Error(
+          `${prefix}${detail ? ` — ${detail}` : ` (HTTP ${res.status})`}`
+        );
+      }
+      return (await res.json()) as QrGenerateResult;
+    },
+  });
+}

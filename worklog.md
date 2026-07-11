@@ -153,3 +153,32 @@ Stage Summary:
 - 클라이언트/서버 양쪽 검증으로 빠른 피드백 + 안전
 - 에러 메시지 한국어화로 사용자 친화적
 - 50MB까지 업로드 가능 (Next.js 제한 상향)
+
+---
+Task ID: 8
+Agent: main (orchestrator)
+Task: QR 코드 자동 생성 기능 추가
+
+Work Log:
+- qrcode + @types/qrcode 패키지 설치
+- POST /api/qr-generate API 구현: 텍스트 입력 → 서버에서 PNG 생성 → /uploads 저장 → URL 반환
+  - errorCorrectionLevel 'M' (15% 복구율), margin 2, warm black(#1c1917)/흰 배경
+  - 크기 128~1024px (기본 320), 텍스트 최대 2048자 검증
+  - 저장 검증 (stat.size 비교)
+- use-materials.ts: useGenerateQr hook 추가 (QrGenerateResult 타입, 에러 처리)
+- qr-generator.tsx 신규 컴포넌트: QR 자동 생성 버튼 + 다이얼로그
+  - 텍스트 입력 필드, 생성 버튼, 로딩 스피너
+  - 생성 후 미리보기 + "자동 생성됨" 라벨 + 제거 버튼
+  - defaultText로 자료 제목 자동 제안
+- material-form.tsx: QR 필드를 SingleImageUpload → QrGenerator로 교체
+  - defaultText: `[분류] 제목` 형태로 자료 식별 정보 자동 완성
+  - hint "기물 자료용 — 자동 생성 또는 이미지 업로드"
+- 브라우저 검증: QR 자동 생성 버튼 → 다이얼로그 → 텍스트 입력 → 생성 → 미리보기(320x320 PNG) → 폼 저장 → 상세 다이얼로그에 QR 표시
+- POST /api/qr-generate 201, POST /api/materials 201 정상 응답
+- lint 0 에러
+
+Stage Summary:
+- QR 코드를 파일 업로드 없이 서버에서 자동 생성 가능
+- 기물 자료(0301~0304) 식별용 QR 코드 자동 발행
+- 자료 제목 기반 defaultText로 빠른 생성 지원
+- 생성된 QR은 일반 이미지처럼 저장/표시/제거 가능

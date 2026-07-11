@@ -67,6 +67,7 @@ import {
   type AttachmentItem,
   SingleImageUpload,
 } from "./file-upload";
+import { QrGenerator } from "./qr-generator";
 import { formatDate, formatDateTime } from "./format";
 
 const CATEGORY_GROUPS: {
@@ -506,14 +507,18 @@ function MaterialFormBody({
                 </FieldGroup>
                 <FieldGroup
                   label="QR코드"
-                  hint="기물 자료용 — QR 이미지가 있는 경우 등록"
+                  hint="기물 자료용 — 자동 생성 또는 이미지 업로드"
                 >
-                  <SingleImageUpload
-                    label="QR코드"
+                  <QrGenerator
                     value={form.qrImage}
-                    onUploaded={(url) => set("qrImage", url)}
+                    onGenerated={(url) => set("qrImage", url)}
                     onClear={() => set("qrImage", null)}
                     compact
+                    defaultText={
+                      form.title
+                        ? `[${form.classification || "자료"}] ${form.title}`
+                        : undefined
+                    }
                   />
                 </FieldGroup>
               </div>
