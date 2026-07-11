@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -24,10 +25,14 @@ import {
   EyeOff,
   FileStack,
   Files,
+  Pencil,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { useRoleStore } from "@/hooks/use-role";
-import { useStats } from "@/hooks/use-materials";
+import { useDeleteMaterial, useStats } from "@/hooks/use-materials";
+import { ROLES } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +53,16 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { ClassificationCategory } from "@/lib/constants";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { StatCard } from "./stat-card";
 import { ClassificationBadge } from "./classification-badge";
 import { formatDate } from "./format";
@@ -101,6 +116,9 @@ export function Dashboard({
   onOpenEdit: (id: string | null) => void;
 }) {
   const role = useRoleStore((s) => s.role);
+  const roleInfo = ROLES.find((r) => r.value === role);
+  const canManage = !!roleInfo?.canManage;
+  const delMut = useDeleteMaterial();
   const { data, isLoading, isError, refetch } = useStats(role);
 
   if (isError) {
@@ -337,15 +355,17 @@ export function Dashboard({
                 최신 {Math.min(recent.length, 8)}건
               </Badge>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1 text-stone-500 hover:text-amber-700"
-              onClick={() => onOpenEdit(null)}
-            >
-              자료 등록
-              <ArrowRight className="size-3.5" />
-            </Button>
+            {canManage ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-stone-500 hover:bg-amber-50 hover:text-amber-700"
+                onClick={() => onOpenEdit(null)}
+              >
+                <ArrowRight className="size-3.5" />
+                자료 등록
+              </Button>
+            ) : null}
           </div>
 
           {isLoading ? (
@@ -366,7 +386,10 @@ export function Dashboard({
                   <TableHead className="text-stone-500">소관부서</TableHead>
                   <TableHead className="hidden text-stone-500 md:table-cell">기준일자</TableHead>
                   <TableHead className="text-stone-500">분류</TableHead>
-                  <TableHead className="pr-5 text-stone-500">공개</TableHead>
+                  <TableHead className="text-stone-500">공개</TableHead>
+                  {canManage ? (
+                    <TableHead className="w-24 pr-5 text-right text-stone-500">관리</TableHead>
+                  ) : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -391,6 +414,25 @@ export function Dashboard({
                     <TableCell className="pr-5">
                       <PublicBadge isPublic={m.isPublic} />
                     </TableCell>
+                    {canManage ? (
+                      <TableCell
+                        className="pr-5 text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DashboardRowActions
+                          id={m.id}
+                          title={m.title}
+                          onEdit={() => onOpenEdit(m.id)}
+                          deleting={delMut.isPending && delMut.variables === m.id}
+                          onDelete={() =>
+                            delMut.mutate(m.id, {
+                              onSuccess: () => toast.success("자료가 삭제되었습니다."),
+                              onError: (e) => toast.error(e.message || "삭제 실패"),
+                            })
+                          }
+                        />
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))}
               </TableBody>
@@ -421,6 +463,67 @@ export function PublicBadge({ isPublic }: { isPublic: boolean }) {
       />
       {isPublic ? "공개" : "비공개"}
     </Badge>
+  );
+}
+
+function DashboardRowActions({
+  id: _id,
+  title,
+  onEdit,
+  onDelete,
+  deleting,
+}: {
+  id: string;
+  title: string;
+  onEdit: () => void;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7 text-stone-500 hover:bg-amber-50 hover:text-amber-700"
+        onClick={onEdit}
+        title="수정"
+      >
+        <Pencil className="size-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7 text-stone-500 hover:bg-rose-50 hover:text-rose-600"
+        onClick={() => setOpen(true)}
+        title="삭제"
+        disabled={deleting}
+      >
+        <Trash2 className="size-3.5" />
+      </Button>
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>자료 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              자료 「{title}」를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-600 text-white hover:bg-rose-700"
+              onClick={() => {
+                setOpen(false);
+                onDelete();
+              }}
+            >
+              {deleting ? "삭제 중…" : "삭제"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
 

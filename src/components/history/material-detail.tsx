@@ -10,6 +10,7 @@ import {
   ImageIcon,
   Lock,
   Pencil,
+  Printer,
   ScanLine,
   Trash2,
   UserCog,
@@ -107,17 +108,30 @@ export function MaterialDetail({
           )}
         </div>
 
-        {data && canManage ? (
+        {data ? (
           <div className="flex items-center justify-end gap-2 border-t border-stone-200 px-6 py-4">
-            <DeleteButton id={data.id} title={data.title} onDone={onClose} />
             <Button
               size="sm"
-              onClick={() => onEdit(data.id)}
-              className="gap-1.5 bg-amber-700 text-white hover:bg-amber-800"
+              variant="outline"
+              onClick={() => window.print()}
+              className="gap-1.5 border-stone-300 bg-white text-stone-600 hover:bg-stone-50"
             >
-              <Pencil className="size-3.5" />
-              수정
+              <Printer className="size-3.5" />
+              인쇄
             </Button>
+            {canManage ? (
+              <>
+                <DeleteButton id={data.id} title={data.title} onDone={onClose} />
+                <Button
+                  size="sm"
+                  onClick={() => onEdit(data.id)}
+                  className="gap-1.5 bg-amber-700 text-white hover:bg-amber-800"
+                >
+                  <Pencil className="size-3.5" />
+                  수정
+                </Button>
+              </>
+            ) : null}
           </div>
         ) : null}
       </DialogContent>

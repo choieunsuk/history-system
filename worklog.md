@@ -101,3 +101,27 @@ Stage Summary:
 - 버그 1건 수정(SelectItem 빈 값) 후 모든 핵심 인터랙션 정상 동작
 - lint 0 에러, dev 로그 런타임 에러 없음
 - 대시보드/목록/상세/등록/권한전환/반응형/푸터 모두 검증 통과
+
+---
+Task ID: 6
+Agent: main (orchestrator)
+Task: 등록/수정/삭제 기능 진입점 강화 및 전체 플로우 검증
+
+Work Log:
+- dashboard.tsx: "자료 등록" 버튼 canManage 권한 체크 추가 (비관리자 숨김)
+- dashboard.tsx: 최근 자료 표에 "관리" 컬럼 + DashboardRowActions(수정/삭제 버튼) 추가
+- dashboard.tsx: useDeleteMaterial, ROLES, AlertDialog, toast, Pencil/Trash2 임포트 추가
+- material-detail.tsx: 인쇄(Printer) 버튼 추가 (PPTX 요구사항 - 모든 사용자)
+- material-detail.tsx: 인쇄 버튼은 모든 권한 표시, 수정/삭제는 canManage만 표시
+- 브라우저 검증: 교역자 권한에서 등록 버튼·관리 액션 표시, 일반인 권한에서 숨김 확인
+- 등록 플로우: "검증용 테스트 자료" 등록 → POST 201 → 대시보드 최상단 표시 확인
+- 수정 플로우: 수정 버튼 클릭 → 폼 기존 데이터 로드 → 제목 "[수정됨]" 변경 → PUT 200 → 반영 확인
+- 삭제 플로우: 삭제 버튼 → 확인 다이얼로그 → DELETE 200 → 목록에서 제거 확인
+- 상세 다이얼로그: 인쇄/삭제/수정 버튼 모두 정상 표시 확인
+- lint 0 에러, 모든 API 200 응답
+
+Stage Summary:
+- 등록/수정/삭제 전체 플로우 end-to-end 검증 완료
+- 대시보드·목록·상세 3곳 모두에서 관리 액션 진입점 제공 (교역자 권한)
+- 비관리자(일반인/등록교인/서리집사)는 등록/수정/삭제 버튼 숨김 처리
+- 인쇄 기능 추가 (PPTX 요구사항 반영)
