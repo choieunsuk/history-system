@@ -1,0 +1,60 @@
+// 역사자료부 자료이관 시스템 - Prisma Schema
+// MS-SQL + ASP.NET 기반 시스템을 Next.js + SQLite로 단순화 이관
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 역사 자료
+model Material {
+  id                 String   @id @default(cuid())
+  title              String   // 자료 제목 (varchar 2048)
+  content            String   // 자료 내용 (rich text / memo)
+  department         String   // 소관 부서 (varchar 2048)
+  classification     String   // 자료 분류 코드 (0101~0304)
+  materialCharacter  String   // 자료 성격 (일반/예배설교/교육회의/세미나워크샵)
+  isPublic           Boolean  @default(true) // 공개 여부
+  referenceDate      DateTime // 기준 일자
+  representativeImg  String?  // 대표 사진 경로
+  qrImage            String?  // QR 코드 경로 (기물자료용)
+  searchKeywords     String?  // 검색 키워드 (varchar 2048)
+  modifier           String   @default("시스템") // 수정자 (자동 표기)
+  modifiedDate       DateTime @updatedAt // 수정 일자 (자동 표기)
+  createdAt          DateTime @default(now())
+
+  attachments        Attachment[]
+
+  @@index([classification])
+  @@index([materialCharacter])
+  @@index([isPublic])
+  @@index([referenceDate])
+}
+
+// 첨부 파일 (최대 10개)
+model Attachment {
+  id          String   @id @default(cuid())
+  materialId  String
+  fileName    String   // 원본 파일명
+  filePath    String   // 저장 경로
+  fileType    String   // MIME 타입
+  fileSize    Int      // 파일 크기 (bytes)
+  createdAt   DateTime @default(now())
+
+  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@index([materialId])
+}
+
+// 사용자 (권한 관리 - 데모용)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      String   @default("일반인") // 교역자/장로/안수집사권사/서리집사/등록교인/일반인
+  createdAt DateTime @default(now())
+}
