@@ -62,7 +62,10 @@ export function MaterialDetail({
 
   return (
     <Dialog open={!!id} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="flex max-h-[92vh] w-full flex-col gap-0 overflow-hidden bg-white p-0 sm:max-w-3xl">
+      <DialogContent
+        aria-describedby={undefined}
+        className="flex max-h-[92vh] w-full flex-col gap-0 overflow-hidden bg-white p-0 sm:max-w-3xl"
+      >
         <DialogHeader className="flex-row items-start justify-between gap-3 border-b border-stone-200 px-6 py-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs text-stone-500">

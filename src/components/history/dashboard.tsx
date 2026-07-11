@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { useRoleStore } from "@/hooks/use-role";
+import { useRoleStore, useMounted } from "@/hooks/use-role";
 import { useDeleteMaterial, useStats } from "@/hooks/use-materials";
 import { ROLES } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
@@ -116,6 +116,7 @@ export function Dashboard({
   onOpenEdit: (id: string | null) => void;
 }) {
   const role = useRoleStore((s) => s.role);
+  const mounted = useMounted();
   const roleInfo = ROLES.find((r) => r.value === role);
   const canManage = !!roleInfo?.canManage;
   const delMut = useDeleteMaterial();
@@ -137,12 +138,18 @@ export function Dashboard({
   const total = data?.total ?? 0;
   const publicCount = data?.publicCount ?? 0;
   const privateCount = data?.privateCount ?? 0;
+  // 현재 월 카운트 — 클라이언트 마운트 후에만 계산 (hydration mismatch 방지)
   const monthCount = (() => {
+    if (!mounted) return 0;
     const key = format(new Date(), "yyyy-MM");
     return (
       data?.byMonth?.find((m) => m.month?.startsWith(key))?.count ?? 0
     );
   })();
+  // 이번 달 라벨 — 마운트 전에는 빈 placeholder (SSR/클라이언트 일치)
+  const monthLabel = mounted
+    ? format(new Date(), "yyyy년 M월", { locale: ko })
+    : "";
 
   const byCategory = data?.byCategory ?? [];
   const byCharacter = data?.byCharacter ?? [];
@@ -194,7 +201,7 @@ export function Dashboard({
               value={monthCount}
               icon={CalendarPlus}
               accent="amber"
-              hint={format(new Date(), "yyyy년 M월", { locale: ko })}
+              hint={monthLabel || "이번 달"}
             />
           </>
         )}

@@ -182,3 +182,28 @@ Stage Summary:
 - 기물 자료(0301~0304) 식별용 QR 코드 자동 발행
 - 자료 제목 기반 defaultText로 빠른 생성 지원
 - 생성된 QR은 일반 이미지처럼 저장/표시/제거 가능
+
+---
+Task ID: 9
+Agent: main (orchestrator)
+Task: Next.js 개발 모드 "1 issue" 배너 원인 분석 및 해결
+
+Work Log:
+- 원인 분석: 2가지 문제 발견
+  1. Hydration mismatch: dashboard.tsx의 format(new Date(), "yyyy-MM") / format(new Date(), "yyyy년 M월")이 서버(UTC)와 클라이언트(Asia/Seoul) 시간대 차이로 불일치
+  2. 접근성 경고: material-detail.tsx DialogContent에 Description 없어 aria-describedby 경고
+- use-role.ts: useMounted() 훅 추가 (useSyncExternalStore 기반, hydration-safe)
+  - 서버 스냅샷: false, 클라이언트 스냅샷: true
+  - React 19 set-state-in-effect 규칙 준수
+- dashboard.tsx: monthCount, monthLabel을 mounted 후에만 계산
+  - hint={monthLabel || "이번 달"} 로 마운트 전 placeholder
+- material-detail.tsx: DialogContent에 aria-describedby={undefined} 명시 (접근성 경고 해결)
+- 검증: 새로고침 후 콘솔 에러/경고 0건, hydration 에러 0건, Fast Refresh full reload 0건
+- VLM 확인: 화면에 이슈 배너/에러 표시 없음 ("이슈 없음")
+- lint 0 에러
+
+Stage Summary:
+- "1 issue" 배너(개발 모드) 완전 제거
+- Hydration mismatch 해결: 날짜 렌더링을 클라이언트 마운트 후로 지연
+- 접근성 경고 해결: DialogContent aria-describedby 명시
+- Fast Refresh unrecoverable error 경고도 사라짐

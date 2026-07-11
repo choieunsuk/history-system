@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import type { RoleValue } from "@/lib/constants";
 
@@ -17,3 +18,19 @@ export const useRoleStore = create<RoleState>((set) => ({
   role: "교역자",
   setRole: (role) => set({ role }),
 }));
+
+/**
+ * 클라이언트 마운트 여부를 반환 (hydration-safe).
+ * useSyncExternalStore로 SSR/클라이언트 일관성 보장.
+ * - 서버 렌더링: false
+ * - 클라이언트 첫 페인트 후: true
+ * 현재 날짜/시간 기반 렌더링 시 hydration mismatch 방지용.
+ */
+const emptySubscribe = () => () => {};
+export function useMounted(): boolean {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true, // 클라이언트 스냅샷
+    () => false // 서버 스냅샷
+  );
+}
