@@ -1,5 +1,6 @@
 // 역사자료부 자료이관 시스템 - 시드 데이터
 import { PrismaClient } from "@prisma/client";
+import { hash } from "bcrypt";
 import { CLASSIFICATIONS, MATERIAL_CHARACTERS } from "../src/lib/constants";
 
 const prisma = new PrismaClient();
@@ -106,11 +107,47 @@ async function main() {
     }
   }
 
-  // 데모 사용자
+  // 데모 사용자 생성
+  await prisma.session.deleteMany();
+  await prisma.account.deleteMany();
   await prisma.user.deleteMany();
+
+  const hashedPassword = await hash("password123", 10);
+
+  // Credentials 로그인용 테스트 사용자 (관리자)
   await prisma.user.create({
-    data: { email: "admin@church.kr", name: "관리자", role: "교역자" },
+    data: {
+      email: "admin@church.kr",
+      name: "관리자",
+      password: hashedPassword,
+      role: "관리자",
+    },
   });
+
+  // 운영자 (자료 등록·변경·삭제 가능)
+  await prisma.user.create({
+    data: {
+      email: "editor@church.kr",
+      name: "운영자",
+      password: hashedPassword,
+      role: "운영자",
+    },
+  });
+
+  // 일반 사용자 (읽기 전용)
+  await prisma.user.create({
+    data: {
+      email: "user@church.kr",
+      name: "일반사용자",
+      password: hashedPassword,
+      role: "일반",
+    },
+  });
+
+  console.log("테스트 계정:");
+  console.log("1. admin@church.kr  / password123 (관리자)");
+  console.log("2. editor@church.kr / password123 (운영자)");
+  console.log("3. user@church.kr   / password123 (일반)");
 
   const count = await prisma.material.count();
   console.log(`시드 완료: 자료 ${count}건, 첨부파일 생성됨`);

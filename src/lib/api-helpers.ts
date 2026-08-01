@@ -4,7 +4,12 @@ import type {
   MaterialRecord,
   MaterialAttachment,
 } from "./constants";
-import { PRIVATE_VIEW_ROLES } from "./constants";
+import {
+  PRIVATE_VIEW_ROLES,
+  MANAGEMENT_ROLES,
+  ADMIN_ROLES,
+  normalizeRole,
+} from "./constants";
 
 export type MaterialWithAttachments = Material & { attachments: Attachment[] };
 
@@ -48,8 +53,21 @@ export function serializeMaterial(
  * 비공개 자료 조회 권한이 있는 역할인지 검사
  */
 export function canViewPrivate(userRole: string | null | undefined): boolean {
-  if (!userRole) return false;
-  return PRIVATE_VIEW_ROLES.includes(userRole as never);
+  return PRIVATE_VIEW_ROLES.includes(normalizeRole(userRole) as never);
+}
+
+/**
+ * 자료 등록·변경·삭제(관리) 권한이 있는 역할인지 검사 (관리자·운영자)
+ */
+export function canManage(userRole: string | null | undefined): boolean {
+  return MANAGEMENT_ROLES.includes(normalizeRole(userRole) as never);
+}
+
+/**
+ * 사용자·권한 관리(관리자 콘솔) 권한이 있는 역할인지 검사 (관리자만)
+ */
+export function isAdmin(userRole: string | null | undefined): boolean {
+  return ADMIN_ROLES.includes(normalizeRole(userRole) as never);
 }
 
 /**

@@ -1,0 +1,45 @@
+# 역사자료부 자료이관 시스템 - 디버깅용 오버라이드
+#
+# 시놀로지 NAS에서만 재현되는 문제를 잡을 때, 운영 배포(docker-compose.yml)의
+# standalone 빌드 대신 원본 소스로 next dev를 임시로 띄우기 위한 파일입니다.
+# 단독으로 쓰지 말고 반드시 base 파일과 함께 merge해서 사용하세요.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.debug.yml up -d --build
+#
+# 주의: 같은 서비스 이름(history-archives)을 오버라이드하는 것이라 별도 컨테이너가
+# "추가로" 뜨는 게 아니라 기존 운영 컨테이너를 이 설정으로 "교체"합니다.
+# 즉 디버깅 중에는 운영 서비스가 잠시 중단됩니다 — 트래픽이 있는 시간대는 피하세요.
+#
+# 종료 후 원상복구(운영 모드로 되돌리기):
+#   docker compose -f docker-compose.yml -f docker-compose.debug.yml down
+#   docker compose up -d --build
+#
+# 참고: db-data / uploads-data 볼륨은 base 파일 그대로 상속되어 운영과 "같은" 데이터를
+# 봅니다. next dev는 스키마를 건드리지 않지만, 운영 데이터를 실수로 조작하지 않도록
+# 주의하세요. 완전히 격리하고 싶다면 아래 volumes 섹션 주석을 해제해 별도 볼륨을 쓰세요.
+
+services:
+  history-archives:
+    build:
+      target: builder # runtime 스테이지까지 안 가고 소스+node_modules가 남아있는 builder에서 멈춤
+    container_name: history-archives-debug
+    command: ["bunx", "next", "dev", "-p", "3000", "-H", "0.0.0.0"]
+    env_file:
+      - .env # NEXTAUTH_SECRET / NEXTAUTH_URL 등 .env 값을 그대로 주입 (base 파일엔 없음)
+    environment:
+      - NODE_ENV=development
+    healthcheck:
+      disable: true
+    deploy:
+      resources:
+        limits:
+          memory: 1024M # next dev는 standalone보다 메모리를 더 씁니다
+    # volumes:
+    #   - db-data-debug:/app/db
+    #   - uploads-data-debug:/app/public/uploads
+
+# volumes:
+#   db-data-debug:
+#     driver: local
+#   uploads-data-debug:
+#     driver: local

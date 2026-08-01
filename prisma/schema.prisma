@@ -50,11 +50,52 @@ model Attachment {
   @@index([materialId])
 }
 
-// 사용자 (권한 관리 - 데모용)
+// 사용자 (next-auth + 권한 관리)
 model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  password      String?   // Credentials 로그인용
+  role          String    @default("일반") // 권한: 관리자 / 운영자 / 일반
+  image         String?   // Social 로그인 프로필 사진
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+}
+
+// OAuth/Social 로그인 계정 연결
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String  // "oauth", "credentials"
+  provider           String  // "google", "github"
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// 세션 (next-auth)
+model Session {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  role      String   @default("일반인") // 교역자/장로/안수집사권사/서리집사/등록교인/일반인
+  sessionToken String @unique
+  userId    String
+  expires   DateTime
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

@@ -27,7 +27,9 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/db/custom.db
       - NEXT_TELEMETRY_DISABLED=1
-      # 필요시 시놀로지 역방향 프록시 도메인 설정:
+      - NEXTAUTH_SECRET=x61bbxH+2Hw0KMLCSA8lunRuWKkforw4jvUtqSsQjYk=
+      - NEXTAUTH_URL=http://ykhistory:3100
+      # 시놀로지 역방향 프록시 사용 시 변경:
       # - NEXTAUTH_URL=https://archives.your-church.kr
 
     volumes:
@@ -45,11 +47,11 @@ services:
       retries: 3
 
     # 리소스 제한 (시놀로지 NAS 보호)
+    # 참고: 시놀로지 NAS는 CPU CFS 스케줄러를 지원하지 않으므로 메모리만 제한
     deploy:
       resources:
         limits:
           memory: 512M
-          cpus: "1.0"
         reservations:
           memory: 128M
 

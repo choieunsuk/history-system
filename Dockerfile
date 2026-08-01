@@ -3,36 +3,36 @@
 # 다중 스테이지: deps → 빌드 → 런타임 (이미지 크기 최소화)
 
 # ─── Stage 1: deps ──────────────────────────────────────────────────────────
-FROM oven/bun:1.1 AS deps
+FROM node:20 AS deps
 WORKDIR /app
 
 # package.json과 lockfile만 먼저 복사 (캐시 최적화)
-COPY package.json bun.lock* ./
+COPY package.json bun.lock* package-lock.json* ./
 COPY prisma ./prisma
 
-# 의존성 설치 (production deps를 별도로 보관하기 위해 전체 설치 후 추출)
-RUN bun install --frozen-lockfile
+# 의존성 설치
+RUN npm install --no-save 2>/dev/null || npm install
 
 # ─── Stage 2: builder ───────────────────────────────────────────────────────
-FROM oven/bun:1.1 AS builder
+FROM node:20 AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Prisma 클라이언트 생성
-RUN bun run db:generate
+RUN npm run db:generate
 
 # Next.js standalone 빌드
 # - output: "standalone" 설정으로 .next/standalone에 자체 포함 서버 생성
 # - .next/static, public 은 별도 복사 필요
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN bun run build
+RUN npm run build
 
 # ─── Stage 3: runtime ───────────────────────────────────────────────────────
 # 시놀로지 NAS(대부분 x86-64, 일부 ARM) 호환을 위해 linux/amd64 명시
-# 런타임은 가벼운 node alpine 사용 (Bun 런타임보다 범용적)
-FROM node:20-alpine AS runtime
+# Debian 기반 (builder와 동일) — Prisma 바이너리 호환성 확보
+FROM node:20 AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -49,8 +49,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Prisma CLI 복사 (db push 로 스키마 적용 위해)
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+# package.json과 bun.lock (npm install --omit=dev 위해)
+COPY --chown=nextjs:nodejs package.json bun.lock* ./
+
+# Prisma 파일들 복사 (db push 로 스키마 적용 위해)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Entrypoint 스크립트

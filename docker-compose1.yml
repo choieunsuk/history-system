@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  couchdb:
+    image: couchdb
+    container_name: obsidian-livesync
+    user: 1032:100
+    environment:
+      - COUCHDB_USER=admin # 사용하고자하는 ID 로 변경
+      - COUCHDB_PASSWORD=changeme # 사용하고자하는 Password 로 변경
+      - PUID=1032 # 본인의 UID로 변경
+      - PGID=100 # 본인의 GID로 변경
+    volumes:
+      - /volume1/docker/obsidian_livesync/data:/opt/couchdb/data
+      - /volume1/docker/obsidian_livesync/config/local.ini:/opt/couchdb/etc/local.ini
+    ports:
+      - 5984:5984
+    restart: unless-stopped

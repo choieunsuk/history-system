@@ -14,6 +14,8 @@ import { ROLES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RoleSelector, getRolePermissionLabel } from "./role-selector";
+import { UserMenu } from "@/components/auth/user-menu";
+import { RoleSync } from "@/components/auth/role-sync";
 import { Dashboard } from "./dashboard";
 import { MaterialList } from "./material-list";
 import { MaterialForm } from "./material-form";
@@ -51,6 +53,9 @@ export function AppShell() {
 
   return (
     <div className="flex min-h-screen flex-col bg-stone-50">
+      {/* 로그인 세션 role → 전역 권한 store 동기화 */}
+      <RoleSync />
+
       {/* 헤더 */}
       <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:py-3.5">
@@ -92,6 +97,7 @@ export function AppShell() {
               </TabsList>
             </Tabs>
             <RoleSelector />
+            <UserMenu />
           </div>
         </div>
 

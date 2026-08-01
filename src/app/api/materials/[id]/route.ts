@@ -1,7 +1,8 @@
 // 역사자료부 자료이관 시스템 - 자료 상세 조회/수정/삭제 API
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { serializeMaterial, canViewPrivate } from "@/lib/api-helpers";
+import { serializeMaterial, canViewPrivate, canManage } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,8 +17,16 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const userRole =
-      request.nextUrl.searchParams.get("userRole") || "일반인";
+
+    // 세션 검증
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
+    const userRole = session.user.role;
 
     const material = await db.material.findUnique({
       where: { id },
@@ -59,6 +68,22 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+
+    // 세션 + 권한 검증 (자료 수정은 관리자·운영자만)
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
+    if (!canManage(session.user.role)) {
+      return NextResponse.json(
+        { error: "자료를 수정할 권한이 없습니다." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") {
       return NextResponse.json(
@@ -89,7 +114,9 @@ export async function PUT(
     } = body as Record<string, unknown>;
 
     // 업데이트할 필드 조립 (전달된 필드만)
-    const data: Record<string, unknown> = { modifier: "시스템" };
+    const data: Record<string, unknown> = {
+      modifier: session.user.name || session.user.email || "시스템",
+    };
     if (typeof title === "string") data.title = title;
     if (typeof content === "string") data.content = content;
     if (typeof department === "string") data.department = department;
@@ -143,6 +170,22 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // 세션 + 권한 검증 (자료 삭제는 관리자·운영자만)
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
+    if (!canManage(session.user.role)) {
+      return NextResponse.json(
+        { error: "자료를 삭제할 권한이 없습니다." },
+        { status: 403 }
+      );
+    }
+
     const existing = await db.material.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json(

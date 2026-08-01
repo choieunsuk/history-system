@@ -10,6 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
  * - React Query (서버 상태)
  * - Tooltip provider (shadcn tooltips)
  * - Sonner Toaster (토스트 알림)
+ * (SessionProvider는 최상위 layout.tsx에서 처리)
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(

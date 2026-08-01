@@ -1,18 +1,9 @@
 "use client";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { ROLES, type RoleValue } from "@/lib/constants";
 import { useRoleStore } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
-import { ChevronDown, UserRound, Check } from "lucide-react";
+import { UserRound } from "lucide-react";
 
 export function getRolePermissionLabel(role: RoleValue): {
   text: string;
@@ -20,14 +11,14 @@ export function getRolePermissionLabel(role: RoleValue): {
 } {
   const r = ROLES.find((x) => x.value === role);
   if (!r) return { text: "", className: "" };
-  if (r.canManage)
+  if (r.canAdmin)
     return {
-      text: "관리 권한",
+      text: "모든 권한",
       className: "border-amber-200 bg-amber-50 text-amber-800",
     };
-  if (r.canViewPrivate)
+  if (r.canManage)
     return {
-      text: "비공개 조회 가능",
+      text: "자료 관리 가능",
       className: "border-emerald-200 bg-emerald-50 text-emerald-800",
     };
   return {
@@ -36,10 +27,14 @@ export function getRolePermissionLabel(role: RoleValue): {
   };
 }
 
+/**
+ * 현재 로그인 사용자의 권한을 표시하는 읽기 전용 배지.
+ * 권한은 로그인 세션이 결정하며 여기서 변경할 수 없다. (RoleSync 가 세션→store 동기화)
+ */
 export function RoleSelector() {
   const role = useRoleStore((s) => s.role);
-  const setRole = useRoleStore((s) => s.setRole);
-  const roleInfo = ROLES.find((r) => r.value === role) ?? ROLES[0];
+  const roleInfo =
+    ROLES.find((r) => r.value === role) ?? ROLES[ROLES.length - 1];
   const perm = getRolePermissionLabel(role);
 
   return (
@@ -52,47 +47,10 @@ export function RoleSelector() {
       >
         {perm.text}
       </span>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 gap-2 border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:text-stone-800"
-          >
-            <UserRound className="size-4 text-amber-700" />
-            <span className="text-sm font-medium">{roleInfo.label}</span>
-            <ChevronDown className="size-3.5 text-stone-400" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          className="w-64 border-stone-200 bg-white"
-        >
-          <DropdownMenuLabel className="text-stone-500">
-            권한 전환 (데모)
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {ROLES.map((r) => (
-            <DropdownMenuItem
-              key={r.value}
-              onClick={() => setRole(r.value)}
-              className="gap-2"
-            >
-              <span className="flex-1">{r.label}</span>
-              {r.canManage ? (
-                <span className="text-[10px] text-amber-700">관리</span>
-              ) : r.canViewPrivate ? (
-                <span className="text-[10px] text-emerald-700">비공개</span>
-              ) : (
-                <span className="text-[10px] text-stone-400">공개</span>
-              )}
-              {r.value === role ? (
-                <Check className="size-3.5 text-stone-800" />
-              ) : null}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex h-9 items-center gap-2 rounded-md border border-stone-300 bg-white px-3 text-stone-700">
+        <UserRound className="size-4 text-amber-700" />
+        <span className="text-sm font-medium">{roleInfo.label}</span>
+      </div>
     </div>
   );
 }

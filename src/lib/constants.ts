@@ -41,23 +41,52 @@ export const PUBLIC_OPTIONS = [
   { value: false, label: "비공개" },
 ] as const;
 
-// 권한 등급 (높을수록 권한 상위)
+// 권한 등급 (Jenkins 유사 3단계 — 높을수록 권한 상위)
+// - 관리자: 모든 권한 (자료 CRUD + 비공개 조회 + 사용자·권한 관리)
+// - 운영자: 자료 등록·변경·삭제 + 비공개 조회
+// - 일반  : 읽기 전용 (공개 자료만 조회)
 export const ROLES = [
-  { value: "교역자", label: "교역자", level: 6, canManage: true, canViewPrivate: true },
-  { value: "장로", label: "장로", level: 5, canManage: false, canViewPrivate: true },
-  { value: "안수집사/권사", label: "안수집사/권사", level: 4, canManage: false, canViewPrivate: true },
-  { value: "서리집사", label: "서리집사", level: 3, canManage: false, canViewPrivate: false },
-  { value: "등록교인", label: "등록교인", level: 2, canManage: false, canViewPrivate: false },
-  { value: "일반인", label: "일반인", level: 1, canManage: false, canViewPrivate: false },
+  { value: "관리자", label: "관리자", level: 3, canManage: true, canViewPrivate: true, canAdmin: true, description: "모든 권한 — 자료 관리 + 사용자·권한 관리" },
+  { value: "운영자", label: "운영자", level: 2, canManage: true, canViewPrivate: true, canAdmin: false, description: "자료 등록·변경·삭제 + 비공개 조회" },
+  { value: "일반", label: "일반", level: 1, canManage: false, canViewPrivate: false, canAdmin: false, description: "공개 자료 읽기 전용" },
 ] as const;
 
 export type RoleValue = (typeof ROLES)[number]["value"];
+
+// 신규 가입자·미지정 사용자의 기본 권한 (최소 권한)
+export const DEFAULT_ROLE: RoleValue = "일반";
 
 // 관리 권한 보유 여부 (자료 등록/수정/삭제 가능)
 export const MANAGEMENT_ROLES = ROLES.filter((r) => r.canManage).map((r) => r.value);
 
 // 비공개 자료 조회 가능 여부
 export const PRIVATE_VIEW_ROLES = ROLES.filter((r) => r.canViewPrivate).map((r) => r.value);
+
+// 사용자·권한 관리(관리자 콘솔) 접근 가능 여부
+export const ADMIN_ROLES = ROLES.filter((r) => r.canAdmin).map((r) => r.value);
+
+// 레거시(교회 직분) 권한명 → 신규 3단계 매핑.
+// 기존 DB/세션에 남아있는 옛 role 값을 안전하게 변환하기 위한 표.
+const LEGACY_ROLE_MAP: Record<string, RoleValue> = {
+  교역자: "관리자",
+  장로: "운영자",
+  "안수집사/권사": "일반",
+  서리집사: "일반",
+  등록교인: "일반",
+  일반인: "일반",
+};
+
+/**
+ * 임의의 role 문자열을 유효한 RoleValue 로 정규화.
+ * - 신규 3단계 중 하나면 그대로
+ * - 레거시 직분명이면 매핑
+ * - 그 외 알 수 없는 값은 최소 권한(DEFAULT_ROLE)
+ */
+export function normalizeRole(role: string | null | undefined): RoleValue {
+  if (!role) return DEFAULT_ROLE;
+  if (ROLES.some((r) => r.value === role)) return role as RoleValue;
+  return LEGACY_ROLE_MAP[role] ?? DEFAULT_ROLE;
+}
 
 // 첨부 파일 최대 개수
 export const MAX_ATTACHMENTS = 10;

@@ -1,5 +1,6 @@
 // 역사자료부 자료이관 시스템 - 자료 목록 조회 + 생성 API
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import {
@@ -7,6 +8,7 @@ import {
   buildRoleVisibilityWhere,
   parseDateOnly,
   endOfDay,
+  canManage,
 } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +20,15 @@ export const runtime = "nodejs";
  */
 export async function GET(request: NextRequest) {
   try {
+    // 세션 검증
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
+
     const sp = request.nextUrl.searchParams;
     const q = sp.get("q")?.trim() || undefined;
     const classification = sp.get("classification") || undefined;
@@ -26,7 +37,9 @@ export async function GET(request: NextRequest) {
     const department = sp.get("department")?.trim() || undefined;
     const dateFromStr = sp.get("dateFrom");
     const dateToStr = sp.get("dateTo");
-    const userRole = sp.get("userRole") || "일반인";
+
+    // 세션에서 userRole 가져오기
+    const userRole = session.user.role || "일반인";
 
     const page = Math.max(1, Number(sp.get("page")) || 1);
     const pageSize = Math.max(
@@ -104,6 +117,23 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // 세션 검증
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
+
+    // 권한 검증 (자료 등록은 관리자·운영자만)
+    if (!canManage(session.user.role)) {
+      return NextResponse.json(
+        { error: "자료를 등록할 권한이 없습니다." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") {
       return NextResponse.json(
@@ -166,7 +196,7 @@ export async function POST(request: NextRequest) {
         qrImage: typeof qrImage === "string" ? qrImage : null,
         searchKeywords:
           typeof searchKeywords === "string" ? searchKeywords : null,
-        modifier: "시스템",
+        modifier: session.user.name || session.user.email || "시스템",
       },
       include: { attachments: true },
     });
